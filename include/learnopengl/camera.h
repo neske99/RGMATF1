@@ -98,13 +98,13 @@ public:
         if(thirdPerson){
 
            //TODO third person perspective;
-
-           glm::vec3 newPos=glm::normalize(vec3(Position.x,Position.y+2.0,Position.z-1.0));
+            glm::vec3 offset=vec3(0.0f,3.0f,2.5f);
+           glm::vec3 newPos=Position+vec3(offset.x*Front.x,offset.y,-Front.z*offset.z);
            glm ::vec3 newFront=glm::normalize(Position+Front-newPos);
            glm::vec3 newRight=glm::normalize(glm::cross(newFront,WorldUp));
             glm::vec3 newUp=glm::normalize(glm::cross(newRight,newFront));
 
-            return glm::lookAt(newPos ,newPos+newFront,newUp);
+            return glm::lookAt(newPos ,Position+Front,newUp);
         }
         return glm::lookAt(Position, Position + Front, Up);
     }
