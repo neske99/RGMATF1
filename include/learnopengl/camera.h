@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include<learnopengl/shader.h>
 #include <vector>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
@@ -40,6 +40,9 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    bool flashlightOn;
+    SpotLight spotLight;
+    bool thirdPerson;
 
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -49,6 +52,21 @@ public:
         Yaw = yaw;
         Pitch = pitch;
         updateCameraVectors();
+        flashlightOn=false;
+        spotLight.position=Position;
+
+        spotLight.direction=Front;
+        spotLight.constant=1.0f;
+        spotLight.linear=0.09f;
+        spotLight.quadratic=0.032f;
+        spotLight.cutOff=glm::cos(glm::radians(12.5f));
+        spotLight.outerCutOff=glm::cos(glm::radians(15.0f));
+
+        spotLight.ambient=vec3(0.0f,0.0f,0.0f);
+        spotLight.diffuse=vec3(1.0f,1.0f,1.0f);
+        spotLight.specular=vec3(1.0f,1.0f,1.0f);
+        thirdPerson=false;
+
     }
     // constructor with scalar values
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -58,11 +76,36 @@ public:
         Yaw = yaw;
         Pitch = pitch;
         updateCameraVectors();
+        flashlightOn=false;
+        spotLight.position=Position;
+
+        spotLight.direction=Front;
+        spotLight.constant=1.0f;
+        spotLight.linear=0.09f;
+        spotLight.quadratic=0.032f;
+        spotLight.cutOff=glm::cos(glm::radians(12.5f));
+        spotLight.outerCutOff=glm::cos(glm::radians(15.0f));
+
+        spotLight.ambient=vec3(0.0f,0.0f,0.0f);
+        spotLight.diffuse=vec3(1.0f,1.0f,1.0f);
+        spotLight.specular=vec3(1.0f,1.0f,1.0f);
+        thirdPerson =false;
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix()
     {
+        if(thirdPerson){
+
+           //TODO third person perspective;
+
+           glm::vec3 newPos=glm::normalize(vec3(Position.x,Position.y+2.0,Position.z-1.0));
+           glm ::vec3 newFront=glm::normalize(Position+Front-newPos);
+           glm::vec3 newRight=glm::normalize(glm::cross(newFront,WorldUp));
+            glm::vec3 newUp=glm::normalize(glm::cross(newRight,newFront));
+
+            return glm::lookAt(newPos ,newPos+newFront,newUp);
+        }
         return glm::lookAt(Position, Position + Front, Up);
     }
 
@@ -70,14 +113,19 @@ public:
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
-        if (direction == FORWARD)
+        if (direction == FORWARD){
             Position += Front * velocity;
-        if (direction == BACKWARD)
+
+        }
+        if (direction == BACKWARD) {
             Position -= Front * velocity;
+
+        }
         if (direction == LEFT)
             Position -= Right * velocity;
         if (direction == RIGHT)
             Position += Right * velocity;
+        spotLight.position=Position;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -122,6 +170,7 @@ private:
         front.y = sin(glm::radians(Pitch));
         front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         Front = glm::normalize(front);
+        spotLight.direction=Front;
         // also re-calculate the Right and Up vector
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));

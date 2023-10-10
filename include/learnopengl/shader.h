@@ -9,6 +9,8 @@
 #include <sstream>
 #include <iostream>
 #include <common.h>
+#include<vector>
+#include<mylibs/Lights.h>
 class Shader
 {
 public:
@@ -167,6 +169,35 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+    void setPointLights(std::vector<PointLight>&lights){
+        int n=lights.size();
+        setInt("NR_POINT_LIGHTS",n);
+        for(int i=0;i<n;i++) {
+            setVec3("pointLights["+std::to_string(i)+"].position",lights[i].position);
+            setVec3("pointLights["+std::to_string(i)+"].ambient", lights[i].ambient);
+            setVec3("pointLights["+std::to_string(i)+"].diffuse", lights[i].diffuse);
+            setVec3("pointLights["+std::to_string(i)+"].specular", lights[i].specular);
+            setFloat("pointLights["+std::to_string(i)+"].constant", lights[i].constant);
+            setFloat("pointLights["+std::to_string(i)+"].linear", lights[i].linear);
+            setFloat("pointLights["+std::to_string(i)+"].quadratic", lights[i].quadratic);
+        }
+    }
+    void setSpotlight(SpotLight&spotLight,int i,float intensity=1){
+        setVec3("spotLights["+std::to_string(i)+"].position", spotLight.position);
+        setVec3("spotLights["+std::to_string(i)+"].direction", spotLight.direction);
+
+        setFloat("spotLights["+std::to_string(i)+"].constant", spotLight.constant);
+        setFloat("spotLights["+std::to_string(i)+"].linear", spotLight.linear);
+        setFloat("spotLights["+std::to_string(i)+"].quadratic", spotLight.quadratic);
+
+        setFloat("spotLights["+std::to_string(i)+"].cutOff", spotLight.cutOff);
+        setFloat("spotLights["+std::to_string(i)+"].outerCutOff", spotLight.outerCutOff);
+
+        setVec3("spotLights["+std::to_string(i)+"].ambient", intensity*spotLight.ambient);
+        setVec3("spotLights["+std::to_string(i)+"].diffuse", intensity*spotLight.diffuse);
+        setVec3("spotLights["+std::to_string(i)+"].specular", intensity*spotLight.specular);
+
+        }
 
 private:
     // utility function for checking shader compilation/linking errors.

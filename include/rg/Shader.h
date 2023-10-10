@@ -13,6 +13,8 @@
 #include <rg/Error.h>
 #include <common.h>
 #include <glm/glm.hpp>
+#include<mylibs/Lights.h>
+#include<vector>
 class Shader {
     unsigned int m_Id;
 public:
@@ -134,6 +136,17 @@ public:
     void deleteProgram() {
         glDeleteProgram(m_Id);
         m_Id = 0;
+    }
+    void setPointLights(const std::string,const std::vector<PointLight>lights){
+        setInt("NR_POINT_LIGHTS",lights.size());
+       for(int i=0;i<lights.size();i++) {
+           setVec3("pointLight["+std::to_string(i)+"].position", lights[i].position);
+           setVec3("pointLight[" +std::to_string(i)+"].diffuse", lights[i].diffuse);
+           setVec3("pointLight["+std::to_string(i)+"].specular", lights[i].specular);
+           setFloat("pointLight["+std::to_string(i)+"].constant", lights[i].constant);
+           setFloat("pointLight["+std::to_string(i)+"].linear", lights[i].linear);
+           setFloat("pointLight["+std::to_string(i)+"].quadratic", lights[i].quadratic);
+       }
     }
 
 
