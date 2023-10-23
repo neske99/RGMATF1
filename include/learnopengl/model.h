@@ -97,6 +97,7 @@ private:
         vector<Vertex> vertices;
         vector<unsigned int> indices;
         vector<Texture> textures;
+        Mat mat;
 
         // walk through each of the mesh's vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -153,6 +154,14 @@ private:
         }
         // process materials
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        for(int i=0;i<scene->mNumMaterials;i++){
+            cerr<<i<<"  ";
+            scene->mMaterials[i];
+        }
+        cerr<<endl;
+        mat.diffuse=vec3(0.4,0.2,0.3);
+        mat.specular=vec3(0.3,0.2,0.5);
+        mat.shininess=8;
         // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
         // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
         // Same applies to other texture as the following list summarizes:
@@ -179,7 +188,7 @@ private:
 
 
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures);
+        return Mesh(vertices, indices, textures,mat);
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.

@@ -33,22 +33,27 @@ struct Texture {
     string path;
 };
 
+struct Mat{
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
 class Mesh {
 public:
     // mesh Data
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
     vector<Texture>      textures;
-
+    Mat material;
     unsigned int VAO;
     std::string glslIdentifierPrefix;
     // constructor
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
+    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures,Mat material)
     {
         this->vertices = vertices;
         this->indices = indices;
         this->textures = textures;
-
+        this->material=material;
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
     }
@@ -61,7 +66,7 @@ public:
         unsigned int specularNr = 1;
         unsigned int normalNr   = 1;
         unsigned int heightNr   = 1;
-        for(unsigned int i = 0; i < textures.size(); i++)
+       /* for(unsigned int i = 0; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
             // retrieve texture number (the N in diffuse_textureN)
@@ -81,8 +86,10 @@ public:
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
-
-
+       */
+        shader.setVec3("material.diffuse",material.diffuse);
+        shader.setVec3("material.specular",material.specular);
+        shader.setFloat("material.shininess",material.shininess);
 
         // draw mesh
         glBindVertexArray(VAO);

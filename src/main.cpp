@@ -97,7 +97,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
 
-    Model ourModel("resources/objects/backpack/backpack.obj");
+    Model ourModel("resources/objects/car/car.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
     // build and compile our shader zprogram
     // ------------------------------------
