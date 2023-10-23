@@ -103,7 +103,7 @@ int main()
     // ------------------------------------
     Shader lightingShader("resources/shaders/6.multiple_lights.vs", "resources/shaders/6.multiple_lights.fs");
     Shader lightCubeShader("resources/shaders/6.light_cube.vs", "resources/shaders/6.light_cube.fs");
-    Shader backbackShader("resources/shaders/2.model_lighting.vs","resources/shaders/2.model_lighting.fs");
+    Shader bestShader("resources/shaders/best.vs","resources/shaders/best.fs");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     float vertices[] = {
@@ -221,7 +221,20 @@ int main()
         // input
         // -----
         processInput(window);
+        std::vector<PointLight>myPointLights;
+        vec3 ambient=vec3(0.05f, 0.05f, 0.05f);
+        vec3 diffuse=vec3(0.8f, 0.8f, 0.8f);
+        vec3 specular=vec3(1.0f, 1.0f, 1.0f);
+        float constant=1.0f;
+        float linear=0.09f;
+        float quadratic=0.032f;
+        for(int i=0;i<4;i++){
+            myPointLights.emplace_back(pointLightPositions[i],ambient,diffuse,specular,constant,linear,quadratic);
 
+        }
+        glm::mat4 projection = glm::perspective(glm::radians(cameras[currCamIndex].Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = cameras[currCamIndex].GetViewMatrix();
+        glm::mat4 model = glm::mat4(1.0f);
         // render
         // ------
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -239,60 +252,14 @@ int main()
            by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
         */
         // directional light
-
-
         lightingShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
         lightingShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
         lightingShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
         lightingShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
 
         //lightingShader.setPointLights();
-        std::vector<PointLight>myPointLights;
-        vec3 ambient=vec3(0.05f, 0.05f, 0.05f);
-        vec3 diffuse=vec3(0.8f, 0.8f, 0.8f);
-        vec3 specular=vec3(1.0f, 1.0f, 1.0f);
-        float constant=1.0f;
-        float linear=0.09f;
-        float quadratic=0.032f;
-        for(int i=0;i<4;i++){
-            myPointLights.emplace_back(pointLightPositions[i],ambient,diffuse,specular,constant,linear,quadratic);
 
-        }
         lightingShader.setPointLights(myPointLights);
-        /*
-        // point light 1
-        lightingShader.setVec3("pointLights[0].position", pointLightPositions[0]);
-        lightingShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-        lightingShader.setFloat("pointLights[0].constant", 1.0f);
-        lightingShader.setFloat("pointLights[0].linear", 0.09f);
-        lightingShader.setFloat("pointLights[0].quadratic", 0.032f);
-        // point light 2
-        lightingShader.setVec3("pointLights[1].position", pointLightPositions[1]);
-        lightingShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
-        lightingShader.setFloat("pointLights[1].constant", 1.0f);
-        lightingShader.setFloat("pointLights[1].linear", 0.09f);
-        lightingShader.setFloat("pointLights[1].quadratic", 0.032f);
-        // point light 3
-        lightingShader.setVec3("pointLights[2].position", pointLightPositions[2]);
-        lightingShader.setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
-        lightingShader.setFloat("pointLights[2].constant", 1.0f);
-        lightingShader.setFloat("pointLights[2].linear", 0.09f);
-        lightingShader.setFloat("pointLights[2].quadratic", 0.032f);
-        // point light 4
-        lightingShader.setVec3("pointLights[3].position", pointLightPositions[3]);
-        lightingShader.setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
-        lightingShader.setFloat("pointLights[3].constant", 1.0f);
-        lightingShader.setFloat("pointLights[3].linear", 0.09f);
-        lightingShader.setFloat("pointLights[3].quadratic", 0.032f);
-         */
         // spotLight
         lightingShader.setInt("NR_SPOTLIGHTS",cameras.size());
         for(int i=0;i<cameras.size();i++){
@@ -303,25 +270,13 @@ int main()
 
 
         }
-        /*lightingShader.setVec3("spotLight.position", camera.Position);
-        lightingShader.setVec3("spotLight.direction", camera.Front);
-        lightingShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-        lightingShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-        lightingShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-        lightingShader.setFloat("spotLight.constant", 1.0f);
-        lightingShader.setFloat("spotLight.linear", 0.09f);
-        lightingShader.setFloat("spotLight.quadratic", 0.032f);
-        lightingShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-        lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
-*/
+
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(cameras[currCamIndex].Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = cameras[currCamIndex].GetViewMatrix();
-        lightingShader.setMat4("projection", projection);
+       lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
 
         // world transformation
-        glm::mat4 model = glm::mat4(1.0f);
+
         lightingShader.setMat4("model", model);
 
         // bind diffuse map
@@ -360,7 +315,52 @@ int main()
             lightCubeShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-        lightingShader.use();
+        bestShader.use();
+        bestShader.use();
+        bestShader.setVec3("viewPos", cameras[currCamIndex].Position);
+        bestShader.setFloat("material.shininess", 32.0f);
+
+        /*
+           Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index
+           the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
+           by defining light types as classes and set their values in there, or by using a more efficient uniform approach
+           by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
+        */
+        // directional light
+        bestShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+        bestShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+        bestShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        bestShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+
+        //lightingShader.setPointLights();
+
+        bestShader.setPointLights(myPointLights);
+        // spotLight
+        bestShader.setInt("NR_SPOTLIGHTS",cameras.size());
+        for(int i=0;i<cameras.size();i++){
+            if(cameras[i].flashlightOn)
+                bestShader.setSpotlight(cameras[i].spotLight,i,1);
+            else
+                bestShader.setSpotlight(cameras[i].spotLight,i,0);
+
+
+        }
+
+        // view/projection transformations
+        bestShader.setMat4("projection", projection);
+        bestShader.setMat4("view", view);
+
+        // world transformation
+
+        bestShader.setMat4("model", model);
+
+        // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        // bind specular map
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+
         for(int i=0;i<cameras.size();i++) {
             glm::mat4 backpackModel = glm::mat4(1.0f);
 
@@ -370,7 +370,7 @@ int main()
             backpackModel = glm::translate(backpackModel, glm::vec3 (0,0,1.0f) );
             backpackModel = glm::scale(backpackModel,  glm::vec3(0.5f, 0.5f, 0.5f));
             lightingShader.setMat4("model", backpackModel);
-            ourModel.Draw(lightingShader);
+            ourModel.Draw(bestShader);
         }
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
