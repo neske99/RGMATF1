@@ -55,12 +55,28 @@ struct ProgramState {
     glm::vec3 clearColor = glm::vec3(0);
     bool ImGuiEnabled = false;
     Camera camera;
+    vector<Camera>cameras;
+    int currCameraIndex;
     bool CameraMouseMovementUpdateEnabled = true;
     glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
+            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {
+        currCameraIndex=0;
+        cameras.emplace_back(glm::vec3(0.0f,0.0f,3.0f));
+        cameras.emplace_back(glm::vec3(1.0f,0.0f,3.0f));
+        cameras.emplace_back(glm::vec3(2.0f,0.0f,3.0f));
+        cameras.emplace_back(glm::vec3(-1.0f,0.0f,3.0f));
+
+    }
+    void toggleCamera(){
+        currCameraIndex+=1;
+        currCameraIndex=currCameraIndex%cameras.size();
+    }
+    Camera& getCurrCamera(){
+        return cameras[currCameraIndex];
+    }
 
     void SaveToFile(std::string filename);
 
@@ -212,12 +228,12 @@ int main() {
         ourShader.setFloat("pointLight.constant", pointLight.constant);
         ourShader.setFloat("pointLight.linear", pointLight.linear);
         ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
+        ourShader.setVec3("viewPosition", programState->getCurrCamera().Position);
         ourShader.setFloat("material.shininess", 32.0f);
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
+        glm::mat4 projection = glm::perspective(glm::radians(programState->getCurrCamera().Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->camera.GetViewMatrix();
+        glm::mat4 view = programState->getCurrCamera().GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
@@ -258,13 +274,13 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(FORWARD, deltaTime);
+        programState->getCurrCamera().ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(BACKWARD, deltaTime);
+        programState->getCurrCamera().ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(LEFT, deltaTime);
+        programState->getCurrCamera().ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+        programState->getCurrCamera().ProcessKeyboard(RIGHT, deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -291,13 +307,13 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
     lastY = ypos;
 
     if (programState->CameraMouseMovementUpdateEnabled)
-        programState->camera.ProcessMouseMovement(xoffset, yoffset);
+        programState->getCurrCamera().ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    programState->camera.ProcessMouseScroll(yoffset);
+    programState->getCurrCamera().ProcessMouseScroll(yoffset);
 }
 
 void DrawImGui(ProgramState *programState) {
@@ -323,7 +339,7 @@ void DrawImGui(ProgramState *programState) {
 
     {
         ImGui::Begin("Camera info");
-        const Camera& c = programState->camera;
+        const Camera& c = programState->getCurrCamera();
         ImGui::Text("Camera position: (%f, %f, %f)", c.Position.x, c.Position.y, c.Position.z);
         ImGui::Text("(Yaw, Pitch): (%f, %f)", c.Yaw, c.Pitch);
         ImGui::Text("Camera front: (%f, %f, %f)", c.Front.x, c.Front.y, c.Front.z);
@@ -344,5 +360,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         } else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
+
+    }
+    if(key==GLFW_KEY_T && action==GLFW_PRESS){
+        programState->toggleCamera();
     }
 }
