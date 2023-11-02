@@ -50,6 +50,15 @@ struct PointLight {
     float linear;
     float quadratic;
 };
+struct DirLight {
+    glm::vec3 direction;
+
+   glm:: vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+};
+
+
 
 struct ProgramState {
     glm::vec3 clearColor = glm::vec3(0);
@@ -61,6 +70,9 @@ struct ProgramState {
     glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 1.0f;
     PointLight pointLight;
+    DirLight dirlight;
+    vector<PointLight>pointlights;
+    SpotLight spotLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {
         currCameraIndex=0;
@@ -69,6 +81,29 @@ struct ProgramState {
         cameras.emplace_back(glm::vec3(2.0f,0.0f,3.0f));
         cameras.emplace_back(glm::vec3(-1.0f,0.0f,3.0f));
 
+        dirlight.direction=glm::vec3( -0.2f, -1.0f, -0.3f);
+        dirlight.ambient=glm::vec3( 0.05f, 0.05f, 0.05f);
+        dirlight.diffuse=glm::vec3( 0.4f, 0.4f, 0.4f);
+        dirlight.specular=glm::vec3( 0.5f, 0.5f, 0.5f);
+
+        PointLight pl;
+        glm::vec3 pointLightPositions[] = {
+                glm::vec3( 0.7f,  0.2f,  2.0f),
+                glm::vec3( 2.3f, -3.3f, -4.0f),
+                glm::vec3(-4.0f,  2.0f, -12.0f),
+                glm::vec3( 0.0f,  0.0f, -3.0f)
+        };
+
+        pl.ambient=glm::vec3( 0.05f, 0.05f, 0.05f);
+        pl.diffuse=glm::vec3( 0.8f, 0.8f, 0.8f);
+        pl.specular=glm::vec3( 1.0f, 1.0f, 1.0f);
+        pl.constant=1.0f;
+        pl.linear= 0.09f;
+        pl.quadratic= 0.032f;
+        for(int i=0;i<4;i++){
+            pl.position=pointLightPositions[i];
+            pointlights.push_back(pl);
+        }
     }
     void toggleCamera(){
         currCameraIndex+=1;
@@ -364,5 +399,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
     if(key==GLFW_KEY_T && action==GLFW_PRESS){
         programState->toggleCamera();
+    }
+    if(key==GLFW_KEY_F && action==GLFW_PRESS){
+        programState->getCurrCamera().toggleSpotlightOn();
     }
 }
