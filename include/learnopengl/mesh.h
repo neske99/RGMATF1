@@ -67,9 +67,9 @@ public:
         unsigned int specularNr = 1;
         unsigned int normalNr   = 1;
         unsigned int heightNr   = 1;
-        if(textures.size()>0){
-            shader.setBool("hasTexture",true);
-        }
+        bool hasTextures=(textures.size()>0);
+        shader.setBool("hasTexture",hasTextures);
+
 
         for(unsigned int i = 0; i < textures.size(); i++)
         {
