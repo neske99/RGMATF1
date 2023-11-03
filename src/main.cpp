@@ -212,7 +212,7 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/6.multiple_lights.fs");
 
     // load models
     // -----------
@@ -265,6 +265,19 @@ int main() {
         ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         ourShader.setVec3("viewPosition", programState->getCurrCamera().Position);
         ourShader.setFloat("material.shininess", 32.0f);
+
+        ourShader.setVec3("spotlight.position",programState->getCurrCamera().spotLight.position);
+        ourShader.setVec3("spotlight.direction",programState->getCurrCamera().spotLight.direction);
+        ourShader.setVec3("spotlight.diffuse",programState->getCurrCamera().spotLight.diffuse);
+        ourShader.setVec3("spotlight.specular",programState->getCurrCamera().spotLight.specular);
+        ourShader.setVec3("spotlight.ambient",programState->getCurrCamera().spotLight.ambient);
+        ourShader.setFloat("spotlight.constant",programState->getCurrCamera().spotLight.constant);
+        ourShader.setFloat("spotlight.linear",programState->getCurrCamera().spotLight.linear);
+        ourShader.setFloat("spotlight.quadratic",programState->getCurrCamera().spotLight.quadratic);
+        ourShader.setFloat("spotlight.outerCutOff",programState->getCurrCamera().spotLight.outerCutOff);
+        ourShader.setFloat("spotlight.cutOff",programState->getCurrCamera().spotLight.cutOff);
+
+
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->getCurrCamera().Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
