@@ -159,9 +159,20 @@ private:
         // diffuse: texture_diffuseN
         // specular: texture_specularN
         // normal: texture_normalN
+        aMaterial mat;
         aiColor3D color(0.0f, 0.0f, 0.0f);
         material->Get(AI_MATKEY_COLOR_AMBIENT, color);
+        mat.ambient=glm::vec3(color.r,color.g,color.b);
 
+        material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        mat.diffuse=glm::vec3(color.r,color.g,color.b);
+
+        material->Get(AI_MATKEY_COLOR_SPECULAR, color);
+        mat.specular=glm::vec3(color.r,color.g,color.b);
+
+        float shinines;
+        material->Get(AI_MATKEY_SHININESS,shinines);
+        mat.shininess=shinines;
 
         // 1. diffuse maps
         vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
@@ -179,7 +190,7 @@ private:
 
 
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures);
+        return Mesh(vertices, indices, textures,mat);
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.

@@ -154,7 +154,7 @@ int main() {
         ourShader.setInt("slCount",programState->cameras.size());
         ;
 
-        
+
         ourShader.setProgramState(programState);
         ourModel.Draw(ourShader);
 
