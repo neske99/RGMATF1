@@ -1,6 +1,6 @@
 #version 330 core
 out vec4 FragColor;
-
+#define MAX_LIGHT_COUNT (16)
 struct PointLight {
     vec3 position;
 
@@ -44,10 +44,12 @@ struct Material {
 in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
+uniform int plCount;
+uniform int slCount;
+uniform PointLight pointLights[MAX_LIGHT_COUNT];
 
-uniform PointLight pointLight;
 uniform Material material;
-uniform SpotLight spotlight;
+uniform SpotLight spotlights[MAX_LIGHT_COUNT];
 uniform DirLight dirlight;
 uniform vec3 viewPosition;
 // calculates the color when using a point light.
@@ -58,7 +60,12 @@ void main()
 {
     vec3 normal = normalize(Normal);
     vec3 viewDir = normalize(viewPosition - FragPos);
-    vec3 result = CalcPointLight(pointLight, normal, FragPos, viewDir)+CalcSpotLight(spotlight,normal,FragPos,viewDir)+CalcDirLight(dirlight,normal,viewDir);
+    vec3 result =vec3(0);
+     result+=CalcDirLight(dirlight,normal,viewDir);
+     for(int i=0;i<plCount;i++)
+        result+=CalcPointLight(pointLights[i], normal, FragPos, viewDir);
+     for(int i=0;i<slCount;i++)
+        result+=CalcSpotLight(spotlights[i],normal,FragPos,viewDir);
     FragColor = vec4(result, 1.0);
 }
 

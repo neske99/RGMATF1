@@ -27,129 +27,23 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+
 
 // camera
 
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
+
 bool firstMouse = true;
 
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-struct PointLight {
-    glm::vec3 position;
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-
-    float constant;
-    float linear;
-    float quadratic;
-};
-struct DirLight {
-    glm::vec3 direction;
-
-   glm:: vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-};
-
-
-
-struct ProgramState {
-    glm::vec3 clearColor = glm::vec3(0);
-    bool ImGuiEnabled = false;
-    Camera camera;
-    vector<Camera>cameras;
-    int currCameraIndex;
-    bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
-    float backpackScale = 1.0f;
-    PointLight pointLight;
-    DirLight dirlight;
-    vector<PointLight>pointlights;
-    SpotLight spotLight;
-    ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {
-        currCameraIndex=0;
-        cameras.emplace_back(glm::vec3(0.0f,0.0f,3.0f));
-        cameras.emplace_back(glm::vec3(1.0f,0.0f,3.0f));
-        cameras.emplace_back(glm::vec3(2.0f,0.0f,3.0f));
-        cameras.emplace_back(glm::vec3(-1.0f,0.0f,3.0f));
-
-        dirlight.direction=glm::vec3( -0.2f, -1.0f, -0.3f);
-        dirlight.ambient=glm::vec3( 0.05f, 0.05f, 0.05f);
-        dirlight.diffuse=glm::vec3( 0.4f, 0.4f, 0.4f);
-        dirlight.specular=glm::vec3( 0.5f, 0.5f, 0.5f);
-
-        PointLight pl;
-        glm::vec3 pointLightPositions[] = {
-                glm::vec3( 0.7f,  0.2f,  2.0f),
-                glm::vec3( 2.3f, -3.3f, -4.0f),
-                glm::vec3(-4.0f,  2.0f, -12.0f),
-                glm::vec3( 0.0f,  0.0f, -3.0f)
-        };
-
-        pl.ambient=glm::vec3( 0.05f, 0.05f, 0.05f);
-        pl.diffuse=glm::vec3( 0.8f, 0.8f, 0.8f);
-        pl.specular=glm::vec3( 1.0f, 1.0f, 1.0f);
-        pl.constant=1.0f;
-        pl.linear= 0.09f;
-        pl.quadratic= 0.032f;
-        for(int i=0;i<4;i++){
-            pl.position=pointLightPositions[i];
-            pointlights.push_back(pl);
-        }
-    }
-    void toggleCamera(){
-        currCameraIndex+=1;
-        currCameraIndex=currCameraIndex%cameras.size();
-    }
-    Camera& getCurrCamera(){
-        return cameras[currCameraIndex];
-    }
-
-    void SaveToFile(std::string filename);
-
-    void LoadFromFile(std::string filename);
-};
-
-void ProgramState::SaveToFile(std::string filename) {
-    std::ofstream out(filename);
-    out << clearColor.r << '\n'
-        << clearColor.g << '\n'
-        << clearColor.b << '\n'
-        << ImGuiEnabled << '\n'
-        << camera.Position.x << '\n'
-        << camera.Position.y << '\n'
-        << camera.Position.z << '\n'
-        << camera.Front.x << '\n'
-        << camera.Front.y << '\n'
-        << camera.Front.z << '\n';
-}
-
-void ProgramState::LoadFromFile(std::string filename) {
-    std::ifstream in(filename);
-    if (in) {
-        in >> clearColor.r
-           >> clearColor.g
-           >> clearColor.b
-           >> ImGuiEnabled
-           >> camera.Position.x
-           >> camera.Position.y
-           >> camera.Position.z
-           >> camera.Front.x
-           >> camera.Front.y
-           >> camera.Front.z;
-    }
-}
 
 ProgramState *programState;
-
+const unsigned int SCR_WIDTH=800;
+const unsigned int SCR_HEIGHT=600;
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
 void DrawImGui(ProgramState *programState);
 
 int main() {
@@ -212,7 +106,7 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/6.multiple_lights.fs");
+    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/mlml.fs");
 
     // load models
     // -----------
@@ -256,41 +150,12 @@ int main() {
         // don't forget to enable shader before setting uniforms
         ourShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->getCurrCamera().Position);
-        ourShader.setFloat("material.shininess", 32.0f);
+        ourShader.setInt("plCount",programState->pointlights.size());
+        ourShader.setInt("slCount",programState->cameras.size());
+        ;
 
-        ourShader.setVec3("spotlight.position",programState->getCurrCamera().spotLight.position);
-        ourShader.setVec3("spotlight.direction",programState->getCurrCamera().spotLight.direction);
-        ourShader.setVec3("spotlight.diffuse",programState->getCurrCamera().spotLight.diffuse);
-        ourShader.setVec3("spotlight.specular",programState->getCurrCamera().spotLight.specular);
-        ourShader.setVec3("spotlight.ambient",programState->getCurrCamera().spotLight.ambient);
-        ourShader.setFloat("spotlight.constant",programState->getCurrCamera().spotLight.constant);
-        ourShader.setFloat("spotlight.linear",programState->getCurrCamera().spotLight.linear);
-        ourShader.setFloat("spotlight.quadratic",programState->getCurrCamera().spotLight.quadratic);
-        ourShader.setFloat("spotlight.outerCutOff",programState->getCurrCamera().spotLight.outerCutOff);
-        ourShader.setFloat("spotlight.cutOff",programState->getCurrCamera().spotLight.cutOff);
-
-
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->getCurrCamera().Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->getCurrCamera().GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
+        
+        ourShader.setProgramState(programState);
         ourModel.Draw(ourShader);
 
         if (programState->ImGuiEnabled)
