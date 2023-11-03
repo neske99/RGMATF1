@@ -307,6 +307,7 @@ public:
             setFloat("spotlights["+ to_string(i)+"].quadratic", programState->cameras[i].spotLight.quadratic);
             setFloat("spotlights["+ to_string(i)+"].outerCutOff", programState->cameras[i].spotLight.outerCutOff);
             setFloat("spotlights["+ to_string(i)+"].cutOff", programState->cameras[i].spotLight.cutOff);
+            setBool("spotlights["+ to_string(i)+"].on",programState->cameras[i].spotlightOn);
         }
         setVec3("dirlight.direction",programState->dirlight.direction);
         setVec3("dirlight.ambient",programState->dirlight.ambient);
