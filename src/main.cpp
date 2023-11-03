@@ -45,7 +45,7 @@ const unsigned int SCR_HEIGHT=600;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 void DrawImGui(ProgramState *programState);
-
+void drawPointLights();
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -148,6 +148,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
+        drawPointLights();
         ourShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         ourShader.setInt("plCount",programState->pointlights.size());
@@ -280,5 +281,17 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
     if(key==GLFW_KEY_F && action==GLFW_PRESS){
         programState->getCurrCamera().toggleSpotlightOn();
+    }
+}
+void drawPointLights(){
+    Model ourModel("resources/objects/lightbulb/lightbulb.obj");
+    Shader s("resources/shaders/2.model_lighting.vs","resources/shaders/basicfrag.fs");
+    s.use();
+    s.setProgramState(programState);
+    for(int i=0;i<programState->pointlights.size();i++) {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model,programState->pointlights[i].position);
+        s.setMat4("model", model);
+        ourModel.Draw(s);
     }
 }
