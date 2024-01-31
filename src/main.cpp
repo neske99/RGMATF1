@@ -102,7 +102,9 @@ int main() {
 
     // configure global opengl state
     // -----------------------------
-    glEnable(GL_DEPTH_TEST);
+    glEnable( GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
 
     // build and compile shaders
     // -------------------------
@@ -110,7 +112,7 @@ int main() {
 
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
+    Model ourModel("resources/objects/car/car.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;

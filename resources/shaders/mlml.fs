@@ -98,8 +98,8 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), myshine);
+    vec3 halwayDir=normalize(lightDir+viewDir);
+    float spec = pow(max(dot(halwayDir, normal), 0.0), myshine);
     // combine results
     vec3 ambient = light.ambient *mydiff;
     vec3 diffuse = light.diffuse * diff *mydiff;
@@ -112,8 +112,8 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), myshine);
+    vec3 halwayDir=normalize(lightDir+viewDir);
+    float spec = pow(max(dot(halwayDir, normal), 0.0), myshine);
     // attenuation
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
@@ -134,8 +134,8 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), myshine);
+    vec3 halwayDir=normalize(viewDir+lightDir);
+    float spec = pow(max(dot(halwayDir, normal), 0.0), myshine);
     // attenuation
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
