@@ -104,12 +104,36 @@ int main() {
     // -----------------------------
     glEnable( GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //vertices
+    float vertices[]={
+        0.5f,-0.5f,0.0f,     1.0f,0.0f,0.0f, //bottom right
+        -0.5f,-0.5f,0.0f,    0.0f,1.0f,0.0f, //bottom left
+        0.0f,0.5f,0.0f,   0.0f ,0.0f,1.0f //top
+    };
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
 
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/mlml.fs");
-
+    Shader triangleShader("resources/shaders/2.model_lighting.vs","resources/shaders/triangle.fs");
     // load models
     // -----------
     Model ourModel("resources/objects/car/car.obj");
@@ -144,6 +168,7 @@ int main() {
         processInput(window);
 
 
+
         // render
         // ------
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
@@ -160,6 +185,26 @@ int main() {
 
         ourShader.setProgramState(programState);
         ourModel.Draw(ourShader);
+
+        ourShader.use();
+        /*ourShader.setInt("plCount",programState->pointlights.size());
+        ourShader.setInt("slCount",programState->cameras.size());
+        glm::vec3 tmp=glm::vec3(1.0f,1.0f,0.5f);
+        ourShader.setVec3("mat.ambient",tmp);
+        ourShader.setVec3("mat.diffuse",tmp);
+        ourShader.setVec3("mat.specular",tmp);
+        ourShader.setFloat("mat.shininess",32);
+
+
+        ourShader.setProgramState(programState);
+        glm::mat4 model=glm::mat4(1.0f);
+        model=glm::translate(model,programState->backpackPosition);
+        ourShader.setMat4("model",model);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+*/
+
+
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
@@ -289,6 +334,7 @@ void drawPointLights(){
     Model ourModel("resources/objects/lightbulb/lightbulb.obj");
     Shader s("resources/shaders/2.model_lighting.vs","resources/shaders/basicfrag.fs");
     s.use();
+    s.setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
     s.setProgramState(programState);
     for(int i=0;i<programState->pointlights.size();i++) {
         glm::mat4 model = glm::mat4(1.0f);
