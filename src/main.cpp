@@ -187,22 +187,7 @@ int main() {
         ourModel.Draw(ourShader);
 
         ourShader.use();
-        /*ourShader.setInt("plCount",programState->pointlights.size());
-        ourShader.setInt("slCount",programState->cameras.size());
-        glm::vec3 tmp=glm::vec3(1.0f,1.0f,0.5f);
-        ourShader.setVec3("mat.ambient",tmp);
-        ourShader.setVec3("mat.diffuse",tmp);
-        ourShader.setVec3("mat.specular",tmp);
-        ourShader.setFloat("mat.shininess",32);
 
-
-        ourShader.setProgramState(programState);
-        glm::mat4 model=glm::mat4(1.0f);
-        model=glm::translate(model,programState->backpackPosition);
-        ourShader.setMat4("model",model);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-*/
 
 
 
@@ -330,16 +315,58 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         programState->getCurrCamera().toggleSpotlightOn();
     }
 }
+void prepForDrawPointLights(){
+
+
+}
 void drawPointLights(){
     Model ourModel("resources/objects/lightbulb/lightbulb.obj");
-    Shader s("resources/shaders/2.model_lighting.vs","resources/shaders/basicfrag.fs");
-    s.use();
-    s.setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
-    s.setProgramState(programState);
+    Shader s("resources/shaders/basicfrag.vs","resources/shaders/basicfrag.fs");
+    glm::mat4*modelMatrices;
+    modelMatrices=new glm::mat4[programState->pointlights.size()];
+
     for(int i=0;i<programState->pointlights.size();i++) {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model,programState->pointlights[i].position);
-        s.setMat4("model", model);
-        ourModel.Draw(s);
+        modelMatrices[i]=(model);
+        /*s.setMat4("model", model);
+        ourModel.Draw(s);*/
     }
+
+    unsigned int buffer;
+    glGenBuffers(1,&buffer);
+    glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBufferData(GL_ARRAY_BUFFER,programState->pointlights.size()*sizeof(glm::mat4 ),&modelMatrices[0],GL_STATIC_DRAW);
+    for (unsigned int i = 0; i < ourModel.meshes.size(); i++)
+    {
+        unsigned int VAO = ourModel.meshes[i].VAO;
+        glBindVertexArray(VAO);
+        // set attribute pointers for matrix (4 times vec4)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
+    s.use();
+
+
+    s.setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
+    s.setProgramState(programState);
+    for(unsigned int i = 0;i<ourModel.meshes.size();i++){
+        glBindVertexArray(ourModel.meshes[i].VAO);
+        glDrawElementsInstanced(GL_TRIANGLES,static_cast<unsigned int>(ourModel.meshes[i].indices.size()),GL_UNSIGNED_INT,0,programState->pointlights.size());
+        glBindVertexArray(0);
+    }
+
 }
