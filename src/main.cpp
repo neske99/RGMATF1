@@ -45,7 +45,10 @@ const unsigned int SCR_HEIGHT=600;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 void DrawImGui(ProgramState *programState);
-void drawPointLights();
+void drawPointLights(Shader*,Model*);
+
+void prepPointLight(Shader *, Model *);
+
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -156,6 +159,10 @@ int main() {
 
     // render loop
     // -----------
+
+    Model* m=new Model("resources/objects/lightbulb/lightbulb.obj");
+    Shader* s=new Shader("resources/shaders/basicfrag.vs","resources/shaders/basicfrag.fs");
+    prepPointLight(s,m);
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
@@ -175,7 +182,8 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
-        drawPointLights();
+
+        drawPointLights(s,m);
         ourShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         ourShader.setInt("plCount",programState->pointlights.size());
@@ -212,6 +220,8 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -315,13 +325,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         programState->getCurrCamera().toggleSpotlightOn();
     }
 }
-void prepForDrawPointLights(){
 
 
-}
-void drawPointLights(){
-    Model ourModel("resources/objects/lightbulb/lightbulb.obj");
-    Shader s("resources/shaders/basicfrag.vs","resources/shaders/basicfrag.fs");
+void prepPointLight(Shader *s, Model *ourModel) {
     glm::mat4*modelMatrices;
     modelMatrices=new glm::mat4[programState->pointlights.size()];
 
@@ -337,9 +343,9 @@ void drawPointLights(){
     glGenBuffers(1,&buffer);
     glBindBuffer(GL_ARRAY_BUFFER,buffer);
     glBufferData(GL_ARRAY_BUFFER,programState->pointlights.size()*sizeof(glm::mat4 ),&modelMatrices[0],GL_STATIC_DRAW);
-    for (unsigned int i = 0; i < ourModel.meshes.size(); i++)
+    for (unsigned int i = 0; i < ourModel->meshes.size(); i++)
     {
-        unsigned int VAO = ourModel.meshes[i].VAO;
+        unsigned int VAO = ourModel->meshes[i].VAO;
         glBindVertexArray(VAO);
         // set attribute pointers for matrix (4 times vec4)
         glEnableVertexAttribArray(3);
@@ -358,14 +364,20 @@ void drawPointLights(){
 
         glBindVertexArray(0);
     }
-    s.use();
+
+}
 
 
-    s.setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
-    s.setProgramState(programState);
-    for(unsigned int i = 0;i<ourModel.meshes.size();i++){
-        glBindVertexArray(ourModel.meshes[i].VAO);
-        glDrawElementsInstanced(GL_TRIANGLES,static_cast<unsigned int>(ourModel.meshes[i].indices.size()),GL_UNSIGNED_INT,0,programState->pointlights.size());
+void drawPointLights(Shader*s,Model*ourModel){
+
+    s->use();
+
+
+    s->setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
+    s->setProgramState(programState);
+    for(unsigned int i = 0;i<ourModel->meshes.size();i++){
+        glBindVertexArray(ourModel->meshes[i].VAO);
+        glDrawElementsInstanced(GL_TRIANGLES,static_cast<unsigned int>(ourModel->meshes[i].indices.size()),GL_UNSIGNED_INT,0,programState->pointlights.size());
         glBindVertexArray(0);
     }
 
