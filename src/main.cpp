@@ -38,9 +38,7 @@ const unsigned int SCR_HEIGHT=600;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 void DrawImGui(ProgramState *programState);
-void drawPointLights(Shader*,Model*);
 
-void prepPointLight(Shader *, Model *);
 
 int main() {
     // glfw: initialize and configure
@@ -104,6 +102,8 @@ int main() {
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/mlml.fs");
     Shader ninjaShader("resources/shaders/basicfrag.vs","resources/shaders/mlml.fs");
+    Shader lightbulbShader("resources/shaders/2.model_lighting.vs","resources/shaders/basicfrag.fs");
+
     // load models
 
     // -----------
@@ -112,6 +112,9 @@ int main() {
 
     Model ninjaModel("resources/objects/naruto/naruto.obj");
     ninjaModel.SetShaderTextureNamePrefix("material.");
+
+    Model lightbulbModel("resources/objects/lightbulb/lightbulb.obj");
+
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -171,9 +174,6 @@ int main() {
 
 
 
-    Model* m=new Model("resources/objects/lightbulb/lightbulb.obj");
-    Shader* s=new Shader("resources/shaders/basicfrag.vs","resources/shaders/basicfrag.fs");
-    prepPointLight(s,m);
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
@@ -207,7 +207,6 @@ int main() {
             glDrawElementsInstanced(GL_TRIANGLES,static_cast<unsigned int>(ninjaModel.meshes[i].indices.size()),GL_UNSIGNED_INT,0,ninjaCount);
             glBindVertexArray(0);
         }
-        drawPointLights(s,m);
         ourShader.use();
         ourShader.setInt("plCount",programState->pointlights.size());
         ourShader.setInt("slCount",programState->cameras.size());
@@ -216,6 +215,23 @@ int main() {
         ourShader.setProgramState(programState);
         ourModel.Draw(ourShader);
 
+        lightbulbShader.use();
+        lightbulbShader.setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
+        lightbulbShader.setProgramState(programState);
+
+        map<float,int>indexMap;
+        for(int i=0;i<programState->pointlights.size();i++){
+            auto distance=glm::distance(programState->getCurrCamera().Position,programState->pointlights[i].position);
+            indexMap[distance]=i;
+        }
+
+        for(auto it=indexMap.rbegin();it!=indexMap.rend();++it) {
+            int i=it->second;
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model,programState->pointlights[i].position);
+            lightbulbShader.setMat4("model", model);
+            lightbulbModel.Draw(lightbulbShader);
+        }
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
@@ -341,58 +357,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 
-void prepPointLight(Shader *s, Model *ourModel) {
-    glm::mat4*modelMatrices;
-    modelMatrices=new glm::mat4[programState->pointlights.size()];
-
-    for(int i=0;i<programState->pointlights.size();i++) {
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,programState->pointlights[i].position);
-        modelMatrices[i]=(model);
-        /*s.setMat4("model", model);
-        ourModel.Draw(s);*/
-    }
-
-    unsigned int buffer;
-    glGenBuffers(1,&buffer);
-    glBindBuffer(GL_ARRAY_BUFFER,buffer);
-    glBufferData(GL_ARRAY_BUFFER,programState->pointlights.size()*sizeof(glm::mat4 ),&modelMatrices[0],GL_STATIC_DRAW);
-    for (unsigned int i = 0; i < ourModel->meshes.size(); i++)
-    {
-        unsigned int VAO = ourModel->meshes[i].VAO;
-        glBindVertexArray(VAO);
-        // set attribute pointers for matrix (4 times vec4)
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
-        glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
-
-        glVertexAttribDivisor(3, 1);
-        glVertexAttribDivisor(4, 1);
-        glVertexAttribDivisor(5, 1);
-        glVertexAttribDivisor(6, 1);
-
-        glBindVertexArray(0);
-    }
-
-}
 
 
-void drawPointLights(Shader*s,Model*ourModel){
-
-    s->use();
 
 
-    s->setFloat("alpha",glm::sin(glfwGetTime())/2+0.5);
-    s->setProgramState(programState);
-    for(unsigned int i = 0;i<ourModel->meshes.size();i++){
-        glBindVertexArray(ourModel->meshes[i].VAO);
-        glDrawElementsInstanced(GL_TRIANGLES,static_cast<unsigned int>(ourModel->meshes[i].indices.size()),GL_UNSIGNED_INT,0,programState->pointlights.size());
-        glBindVertexArray(0);
-    }
 
-}
+
+
