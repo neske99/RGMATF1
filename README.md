@@ -14,6 +14,6 @@ Sto je donekle i postignuto.
 
 
 # Oblasti primenjene
-1. Instancing za 
+1. Instancing 
 # Link do objects foldera
 https://drive.google.com/file/d/1fRrzmcBFSTKTSs3waNrSQTsea4yjJdHl/view?usp=drive_link
