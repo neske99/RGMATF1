@@ -18,4 +18,4 @@ Sto je donekle i postignuto.
 # Link do objects foldera
 https://drive.google.com/file/d/1fRrzmcBFSTKTSs3waNrSQTsea4yjJdHl/view?usp=drive_link
 # Link do snimka
-https://studio.youtube.com/video/5z7rW1zhCoo/edit
+https://www.youtube.com/watch?v=5z7rW1zhCoo
