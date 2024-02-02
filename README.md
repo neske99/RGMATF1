@@ -1,11 +1,19 @@
-# project_base
-Prazan projekat sa pratećim bibliotekama koje koristimo na času. 
+# RGMATF1 
 
-# Uputstvo
-1. `git clone https://github.com/matf-racunarska-grafika/project_base.git`
-2. CLion -> Open -> path/to/my/project_base
-3. Main se nalazi u src/main.cpp
-4. Cpp fajlovi idu u src folder
-5. Zaglavlja (h i hpp) fajlovi idu u include
-6. Šejderi idu u folder shaders. `Vertex shader` ima ekstenziju `.vs`, `fragment shader` ima ekstenziju `.fs`
-7. ALT+SHIFT+F10 -> project_base -> run
+
+# Opcije
+1. T- toogle camera
+2. AWSD -move current camera position
+3. F - toogle flashlight on current camera
+
+# Napomene
+car.obj objekat ne sadrzi teksture pa ga nije bilo moguce prikazati,sadrzi boje.
+Zbog toga je kostur znatno izmenjen.Ideja je bila zaista napraviti univerzalni 
+model sejder kombinaciju koja bi zaista mogle prikazati hibridne modele(koje sadrze i boje i teksture).
+Sto je donekle i postignuto.
+
+
+# Oblasti primenjene
+1. Instancing 
+# Link do objects foldera
+https://drive.google.com/file/d/1fRrzmcBFSTKTSs3waNrSQTsea4yjJdHl/view?usp=drive_link

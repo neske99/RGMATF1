@@ -9,8 +9,118 @@
 #include <sstream>
 #include <iostream>
 #include <common.h>
-#include<vector>
-#include<mylibs/Lights.h>
+#include<learnopengl/camera.h>
+using namespace std;
+struct PointLight {
+    glm::vec3 position;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
+};
+struct DirLight {
+    glm::vec3 direction;
+
+    glm:: vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+};
+
+
+
+struct ProgramState {
+    glm::vec3 clearColor = glm::vec3(0);
+    bool ImGuiEnabled = false;
+    Camera camera;
+    vector<Camera>cameras;
+    int currCameraIndex;
+    bool CameraMouseMovementUpdateEnabled = true;
+    glm::vec3 backpackPosition = glm::vec3(0.0f);
+    float backpackScale = 1.0f;
+    PointLight pointLight;
+    DirLight dirlight;
+    vector<PointLight>pointlights;
+    SpotLight spotLight;
+    unsigned int SCR_WIDTH=800;
+    unsigned int SCR_HEIGHT=600;
+    ProgramState()
+            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {
+        currCameraIndex=0;
+        cameras.emplace_back(glm::vec3(0.0f,0.0f,3.0f));
+        cameras.emplace_back(glm::vec3(1.0f,0.0f,3.0f));
+        cameras.emplace_back(glm::vec3(2.0f,0.0f,3.0f));
+        cameras.emplace_back(glm::vec3(-1.0f,0.0f,3.0f));
+
+        dirlight.direction=glm::vec3( -0.2f, -1.0f, -0.3f);
+        dirlight.ambient=glm::vec3( 0.05f, 0.05f, 0.05f);
+        dirlight.diffuse=glm::vec3( 0.4f, 0.4f, 0.4f);
+        dirlight.specular=glm::vec3( 0.5f, 0.5f, 0.5f);
+
+        PointLight pl;
+        vector<glm::vec3> pointLightPositions = {
+                glm::vec3( 0.7f,  0.2f,  2.0f),
+                glm::vec3( 2.3f, -3.3f, -4.0f),
+                glm::vec3(-4.0f,  2.0f, -12.0f),
+                /*glm::vec3( 0.0f,  0.0f, -3.0f)*/
+        };
+
+        pl.ambient=glm::vec3( 0.05f, 0.05f, 0.05f);
+        pl.diffuse=glm::vec3( 0.8f, 0.8f, 0.8f);
+        pl.specular=glm::vec3( 1.0f, 1.0f, 1.0f);
+        pl.constant=1.0f;
+        pl.linear= 0.09f;
+        pl.quadratic= 0.032f;
+        for(int i=0;i<pointLightPositions.size();i++){
+            pl.position=pointLightPositions[i];
+            pointlights.push_back(pl);
+        }
+    }
+    void toggleCamera(){
+        currCameraIndex+=1;
+        currCameraIndex=currCameraIndex%cameras.size();
+    }
+    Camera& getCurrCamera(){
+        return cameras[currCameraIndex];
+    }
+
+    void SaveToFile(std::string filename);
+
+    void LoadFromFile(std::string filename);
+};
+
+void ProgramState::SaveToFile(std::string filename) {
+    std::ofstream out(filename);
+    out << clearColor.r << '\n'
+        << clearColor.g << '\n'
+        << clearColor.b << '\n'
+        << ImGuiEnabled << '\n'
+        << camera.Position.x << '\n'
+        << camera.Position.y << '\n'
+        << camera.Position.z << '\n'
+        << camera.Front.x << '\n'
+        << camera.Front.y << '\n'
+        << camera.Front.z << '\n';
+}
+
+void ProgramState::LoadFromFile(std::string filename) {
+    std::ifstream in(filename);
+    if (in) {
+        in >> clearColor.r
+           >> clearColor.g
+           >> clearColor.b
+           >> ImGuiEnabled
+           >> camera.Position.x
+           >> camera.Position.y
+           >> camera.Position.z
+           >> camera.Front.x
+           >> camera.Front.y
+           >> camera.Front.z;
+    }
+}
+
 class Shader
 {
 public:
@@ -169,35 +279,62 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
-    void setPointLights(std::vector<PointLight>&lights){
-        int n=lights.size();
-        setInt("NR_POINT_LIGHTS",n);
-        for(int i=0;i<n;i++) {
-            setVec3("pointLights["+std::to_string(i)+"].position",lights[i].position);
-            setVec3("pointLights["+std::to_string(i)+"].ambient", lights[i].ambient);
-            setVec3("pointLights["+std::to_string(i)+"].diffuse", lights[i].diffuse);
-            setVec3("pointLights["+std::to_string(i)+"].specular", lights[i].specular);
-            setFloat("pointLights["+std::to_string(i)+"].constant", lights[i].constant);
-            setFloat("pointLights["+std::to_string(i)+"].linear", lights[i].linear);
-            setFloat("pointLights["+std::to_string(i)+"].quadratic", lights[i].quadratic);
+    void setProgramState(ProgramState*programState){
+        setInt("plCount",programState->pointlights.size());
+        setInt("slCount",programState->cameras.size());
+        ;
+
+        for(int i=0;i<programState->pointlights.size();i++) {
+            setVec3("pointLights["+ to_string(i)+"].position", programState->pointlights[i].position);
+            setVec3("pointLights["+ to_string(i)+"].ambient", programState->pointlights[i].ambient);
+            setVec3("pointLights["+ to_string(i)+"].diffuse", programState->pointlights[i].diffuse);
+            setVec3("pointLights["+ to_string(i)+"].specular", programState->pointlights[i].specular);
+            setFloat("pointLights["+ to_string(i)+"].constant", programState->pointlights[i].constant);
+            setFloat("pointLights["+ to_string(i)+"].linear", programState->pointlights[i].linear);
+            setFloat("pointLights["+ to_string(i)+"].quadratic", programState->pointlights[i].quadratic);
+
         }
+        setVec3("viewPosition", programState->getCurrCamera().Position);
+        setFloat("material.shininess", 32.0f);
+        for(int i=0;i<programState->cameras.size();i++) {
+            setVec3("spotlights["+ to_string(i)+"].position", programState->cameras[i].spotLight.position);
+            setVec3("spotlights["+ to_string(i)+"].direction", programState->cameras[i].spotLight.direction);
+            setVec3("spotlights["+ to_string(i)+"].diffuse", programState->cameras[i].spotLight.diffuse);
+            setVec3("spotlights["+ to_string(i)+"].specular", programState->cameras[i].spotLight.specular);
+            setVec3("spotlights["+ to_string(i)+"].ambient", programState->cameras[i].spotLight.ambient);
+            setFloat("spotlights["+ to_string(i)+"].constant", programState->cameras[i].spotLight.constant);
+            setFloat("spotlights["+ to_string(i)+"].linear", programState->cameras[i].spotLight.linear);
+            setFloat("spotlights["+ to_string(i)+"].quadratic", programState->cameras[i].spotLight.quadratic);
+            setFloat("spotlights["+ to_string(i)+"].outerCutOff", programState->cameras[i].spotLight.outerCutOff);
+            setFloat("spotlights["+ to_string(i)+"].cutOff", programState->cameras[i].spotLight.cutOff);
+            setBool("spotlights["+ to_string(i)+"].on",programState->cameras[i].spotlightOn);
+        }
+        setVec3("dirlight.direction",programState->dirlight.direction);
+        setVec3("dirlight.ambient",programState->dirlight.ambient);
+        setVec3("dirlight.specular",programState->dirlight.specular);
+        setVec3("dirlight.diffuse",programState->dirlight.diffuse);
+
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(programState->getCurrCamera().Zoom),
+                                                (float) programState->SCR_WIDTH / (float) programState->SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = programState->getCurrCamera().GetViewMatrix();
+        setMat4("projection", projection);
+        setMat4("view", view);
+
+        // render the loaded model
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               programState->backpackPosition); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        setMat4("model", model);
+
+
+
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+
     }
-    void setSpotlight(SpotLight&spotLight,int i,float intensity=1){
-        setVec3("spotLights["+std::to_string(i)+"].position", spotLight.position);
-        setVec3("spotLights["+std::to_string(i)+"].direction", spotLight.direction);
-
-        setFloat("spotLights["+std::to_string(i)+"].constant", spotLight.constant);
-        setFloat("spotLights["+std::to_string(i)+"].linear", spotLight.linear);
-        setFloat("spotLights["+std::to_string(i)+"].quadratic", spotLight.quadratic);
-
-        setFloat("spotLights["+std::to_string(i)+"].cutOff", spotLight.cutOff);
-        setFloat("spotLights["+std::to_string(i)+"].outerCutOff", spotLight.outerCutOff);
-
-        setVec3("spotLights["+std::to_string(i)+"].ambient", intensity*spotLight.ambient);
-        setVec3("spotLights["+std::to_string(i)+"].diffuse", intensity*spotLight.diffuse);
-        setVec3("spotLights["+std::to_string(i)+"].specular", intensity*spotLight.specular);
-
-        }
 
 private:
     // utility function for checking shader compilation/linking errors.

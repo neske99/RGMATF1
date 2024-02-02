@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include<learnopengl/shader.h>
+
 #include <vector>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
@@ -22,7 +22,20 @@ const float SPEED       =  2.5f;
 const float SENSITIVITY =  0.1f;
 const float ZOOM        =  45.0f;
 
+struct SpotLight {
+    glm::vec3 position;
+    glm::vec3 direction;
+    float cutOff;
+    float outerCutOff;
 
+    float constant;
+    float linear;
+    float quadratic;
+
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+};
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
 {
@@ -40,10 +53,8 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
-    bool flashlightOn;
     SpotLight spotLight;
-    bool thirdPerson;
-
+    bool spotlightOn;
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
@@ -51,22 +62,18 @@ public:
         WorldUp = up;
         Yaw = yaw;
         Pitch = pitch;
-        updateCameraVectors();
-        flashlightOn=false;
-        spotLight.position=Position;
-
+        spotLight.position=position;
         spotLight.direction=Front;
-        spotLight.constant=1.0f;
-        spotLight.linear=0.09f;
-        spotLight.quadratic=0.032f;
-        spotLight.cutOff=glm::cos(glm::radians(12.5f));
+        spotLight.ambient=glm::vec3( 0.0f, 0.0f, 0.0f);
+        spotLight.diffuse=glm::vec3( 1.0f, 1.0f, 1.0f);
+        spotLight.specular=glm::vec3(1.0f, 1.0f, 1.0f);
+        spotLight.constant= 1.0f;
+        spotLight.linear= 0.09f;
+        spotLight.quadratic= 0.032f;
+        spotLight.cutOff= glm::cos(glm::radians(12.5f));
         spotLight.outerCutOff=glm::cos(glm::radians(15.0f));
-
-        spotLight.ambient=vec3(0.0f,0.0f,0.0f);
-        spotLight.diffuse=vec3(1.0f,1.0f,1.0f);
-        spotLight.specular=vec3(1.0f,1.0f,1.0f);
-        thirdPerson=false;
-
+        spotlightOn=false;
+        updateCameraVectors();
     }
     // constructor with scalar values
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -75,37 +82,23 @@ public:
         WorldUp = glm::vec3(upX, upY, upZ);
         Yaw = yaw;
         Pitch = pitch;
-        updateCameraVectors();
-        flashlightOn=false;
         spotLight.position=Position;
-
         spotLight.direction=Front;
-        spotLight.constant=1.0f;
-        spotLight.linear=0.09f;
-        spotLight.quadratic=0.032f;
-        spotLight.cutOff=glm::cos(glm::radians(12.5f));
+        spotLight.ambient=glm::vec3( 0.0f, 0.0f, 0.0f);
+        spotLight.diffuse=glm::vec3( 1.0f, 1.0f, 1.0f);
+        spotLight.specular=glm::vec3(1.0f, 1.0f, 1.0f);
+        spotLight.constant= 1.0f;
+        spotLight.linear= 0.09f;
+        spotLight.quadratic= 0.032f;
+        spotLight.cutOff= glm::cos(glm::radians(12.5f));
         spotLight.outerCutOff=glm::cos(glm::radians(15.0f));
-
-        spotLight.ambient=vec3(0.0f,0.0f,0.0f);
-        spotLight.diffuse=vec3(1.0f,1.0f,1.0f);
-        spotLight.specular=vec3(1.0f,1.0f,1.0f);
-        thirdPerson =false;
+        spotlightOn=false;
+        updateCameraVectors();
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix()
     {
-        if(thirdPerson){
-
-           //TODO third person perspective;
-            glm::vec3 offset=vec3(0.0f,3.0f,2.5f);
-           glm::vec3 newPos=Position+vec3(offset.x*Front.x,offset.y,-Front.z*offset.z);
-           glm ::vec3 newFront=glm::normalize(Position+Front-newPos);
-           glm::vec3 newRight=glm::normalize(glm::cross(newFront,WorldUp));
-            glm::vec3 newUp=glm::normalize(glm::cross(newRight,newFront));
-
-            return glm::lookAt(newPos ,Position+Front,newUp);
-        }
         return glm::lookAt(Position, Position + Front, Up);
     }
 
@@ -113,14 +106,10 @@ public:
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
-        if (direction == FORWARD){
+        if (direction == FORWARD)
             Position += Front * velocity;
-
-        }
-        if (direction == BACKWARD) {
+        if (direction == BACKWARD)
             Position -= Front * velocity;
-
-        }
         if (direction == LEFT)
             Position -= Right * velocity;
         if (direction == RIGHT)
@@ -159,7 +148,9 @@ public:
         if (Zoom > 45.0f)
             Zoom = 45.0f; 
     }
-
+    void toggleSpotlightOn(){
+        spotlightOn=!spotlightOn;
+    }
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
@@ -170,10 +161,11 @@ private:
         front.y = sin(glm::radians(Pitch));
         front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         Front = glm::normalize(front);
-        spotLight.direction=Front;
         // also re-calculate the Right and Up vector
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));
+        spotLight.position=Position;
+        spotLight.direction=Front;
     }
 };
 #endif
