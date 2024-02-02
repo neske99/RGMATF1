@@ -103,11 +103,15 @@ int main() {
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/mlml.fs");
-    Shader triangleShader("resources/shaders/2.model_lighting.vs","resources/shaders/triangle.fs");
+    Shader ninjaShader("resources/shaders/basicfrag.vs","resources/shaders/mlml.fs");
     // load models
+
     // -----------
     Model ourModel("resources/objects/car/car.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
+
+    Model ninjaModel("resources/objects/naruto/naruto.obj");
+    ninjaModel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -120,6 +124,52 @@ int main() {
     pointLight.quadratic = 0.032f;
     // render loop
     // -----------
+    const int ninjaCount=10;
+    const float angle=glm::radians(360.0f/ninjaCount);
+    glm::mat4*modelMatrices;
+    modelMatrices=new glm::mat4[ninjaCount];
+
+    for(int i=0;i<ninjaCount;i++) {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model,5.0f*glm::vec3(glm::cos(i*angle),glm::sin(i*angle),0));
+        model=glm::scale(model,glm::vec3(0.1f));
+        modelMatrices[i]=(model);
+        /*s.setMat4("model", model);
+        ourModel.Draw(s);*/
+    }
+
+    unsigned int buffer;
+    glGenBuffers(1,&buffer);
+    glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBufferData(GL_ARRAY_BUFFER,ninjaCount*sizeof(glm::mat4 ),&modelMatrices[0],GL_STATIC_DRAW);
+    for (unsigned int i = 0; i < ninjaModel.meshes.size(); i++)
+    {
+        unsigned int VAO = ninjaModel.meshes[i].VAO;
+        glBindVertexArray(VAO);
+        // set attribute pointers for matrix (4 times vec4)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
+
+
+
+
+
+
+
 
     Model* m=new Model("resources/objects/lightbulb/lightbulb.obj");
     Shader* s=new Shader("resources/shaders/basicfrag.vs","resources/shaders/basicfrag.fs");
@@ -130,6 +180,7 @@ int main() {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
 
         // input
         // -----
@@ -141,9 +192,23 @@ int main() {
 
         // don't forget to enable shader before setting uniforms
 
+        ninjaShader.use();
+        ninjaShader.setInt("plCount",programState->pointlights.size());
+        ninjaShader.setInt("slCount",programState->cameras.size());
+        ninjaShader.setBool("hasTexture", false);
+        ninjaShader.setProgramState(programState);
+
+        for(unsigned int i = 0;i<ninjaModel.meshes.size();i++){
+            ninjaShader.setVec3("mat.ambient",ninjaModel.meshes[i].mat.ambient);
+            ninjaShader.setVec3("mat.diffuse",ninjaModel.meshes[i].mat.diffuse);
+            ninjaShader.setVec3("mat.specular",ninjaModel.meshes[i].mat.specular);
+            ninjaShader.setFloat("mat.shininess",ninjaModel.meshes[i].mat.shininess);
+            glBindVertexArray(ninjaModel.meshes[i].VAO);
+            glDrawElementsInstanced(GL_TRIANGLES,static_cast<unsigned int>(ninjaModel.meshes[i].indices.size()),GL_UNSIGNED_INT,0,ninjaCount);
+            glBindVertexArray(0);
+        }
         drawPointLights(s,m);
         ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         ourShader.setInt("plCount",programState->pointlights.size());
         ourShader.setInt("slCount",programState->cameras.size());
         ;
@@ -151,7 +216,6 @@ int main() {
         ourShader.setProgramState(programState);
         ourModel.Draw(ourShader);
 
-        ourShader.use();
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
